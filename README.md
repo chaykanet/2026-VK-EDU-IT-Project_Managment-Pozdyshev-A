@@ -1,0 +1,1 @@
+# 2026-VK-EDU-IT-Project_Managment-Pozdyshev-A
