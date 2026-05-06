@@ -29,6 +29,6 @@ Rel(cargomatch, payment, "Эскроу, списание, выплаты")
 Rel(cargomatch, maps,    "Маршруты, GPS-трекинг")
 Rel(cargomatch, sms,     "Push и SMS уведомления")
 Rel(cargomatch, email,   "Email уведомления")
-Rel(cargomatch, llm,     "Запросы к LLM (MVP)")
+Rel(cargomatch, llm,     "Запросы к LLM")
 
 @enduml
