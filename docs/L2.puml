@@ -1,0 +1,79 @@
+@startuml C4_Level2_CargoMatch
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 2 — Containers: CargoMatch
+
+Person(shipper,   "Грузоотправитель / Экспедитор", "Создаёт заявки, платит через эскроу")
+Person(carrier,   "Перевозчик", "Берёт заказы, делает ставки, Co-Carry")
+Person(staff,     "Поддержка / Администратор", "Тикеты, модерация, блокировки")
+
+System_Ext(payment, "Агрегатор оплаты", "ЮКасса — эскроу, списание, выплаты")
+System_Ext(maps, "Яндекс Карты", "GPS-трекинг и построение маршрутов")
+System_Ext(sms,  "SMS / Push сервис", "Уведомления о статусах заказа")
+System_Ext(email, "Почтовый сервис", "Email-уведомления")
+System_Ext(llm_ext,  "YandexGPT API",  "Внешний LLM для чат-ассистента")
+System_Ext(opendata, "Открытые датасеты", "Росстат, ATI.su, Минтранс - для Price Engine")
+
+System_Boundary(cargomatch, "CargoMatch") {
+
+    Container(web, "Веб-приложение", "React / Next.js", "Интерфейс грузоотправителя и перевозчика")
+    Container(mobile, "Мобильное приложение", "Flutter", "iOS и Android")
+    Container(admin_ui, "Админ-панель", "React", "Модерация, логи, блокировки, отмены")
+
+    Container(nginx, "Nginx", "SSL, балансировка, роутинг запросов")
+
+    Container(api, "Backend API", "Python / FastAPI", "Бизнес-логика: заявки, аукцион, Co-Carry, верификация, эскроу")
+
+    Container(ws, "WebSocket сервер", "Python / FastAPI WS", "Реалтайм: GPS-трекинг, обновления ставок аукциона")
+
+    ContainerDb(postgres, "PostgreSQL", "База данных", "Пользователи, заявки, сделки, платежи, рейтинги")
+
+    ContainerDb(redis, "Redis", "Кэш / очередь", "Сессии, кэш ответов, состояние аукциона в реальном времени")
+
+    ContainerDb(s3, "S3 хранилище", "MinIO / Yandex S3", "Фото техники, документы верификации, электронные ТТН")
+
+    Container(queue, "Message Queue", "Apache Kafka", "Асинхронные уведомления, вебхуки агрегатора, события платформы")
+
+    Container(ai_price, "Price Engine", "Python / scikit-learn", "Расчёт стоимости заявки по формуле и рыночным коэффициентам.\nОбучается на сделках платформы и открытых датасетах.")
+
+    Container(ai_chat, "Chat Assistant", "Python / LangChain", "Чат-ассистент для пользователей. Проксирует запросы к YandexGPT.\nЕсли не справился - эскалация в тикет поддержки.")
+}
+
+Rel(shipper,  nginx, "HTTPS", "REST / WebSocket")
+Rel(carrier,  nginx, "HTTPS", "REST / WebSocket")
+Rel(staff,    nginx, "HTTPS", "REST")
+
+Rel(nginx, web, "Роутинг", "HTTP")
+Rel(nginx, mobile, "Роутинг", "HTTP")
+Rel(nginx, admin_ui, "Роутинг", "HTTP")
+Rel(nginx, api, "REST API", "HTTP")
+Rel(nginx, ws, "WebSocket", "WS")
+
+Rel(web, api, "REST", "JSON")
+Rel(mobile, api, "REST", "JSON")
+Rel(admin_ui, api, "REST", "JSON")
+Rel(web, ws,  "WebSocket", "GPS / аукцион")
+Rel(mobile, ws,  "WebSocket", "GPS / аукцион")
+
+Rel(api, postgres, "SQL",   "Чтение / запись данных")
+Rel(api, redis, "Кэш",   "Сессии, состояние аукциона")
+Rel(api, s3, "Файлы", "Загрузка и выдача документов")
+
+Rel(api, ai_price, "Запрос оценки цены",    "REST / JSON")
+Rel(api, ai_chat,  "Запрос к чат-ассистенту", "REST / JSON")
+
+Rel(ai_price, opendata, "Импорт датасетов", "HTTP / CSV")
+Rel(ai_price, postgres, "Обучение на сделках", "SQL")
+Rel(ai_chat,  llm_ext,  "Проксирует запрос", "REST / API Key")
+Rel(ai_chat,  postgres, "Дообучение на тикетах", "SQL")
+
+Rel(api, queue, "Публикует события", "Kafka Producer")
+Rel(queue, sms,   "SMS / Push", "Kafka Consumer")
+Rel(queue, email, "Email", "Kafka Consumer")
+
+Rel(api, payment, "Эскроу, списание, выплаты", "REST")
+Rel(ws,  maps, "GPS-координаты", "REST")
+
+@enduml

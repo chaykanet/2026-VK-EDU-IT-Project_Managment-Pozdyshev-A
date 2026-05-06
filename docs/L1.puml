@@ -1,0 +1,34 @@
+@startuml C4_Level1_CargoMatch
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 1 — Context: CargoMatch
+
+Person(shipper, "Грузоотправитель", "Создаёт заявки на перевозку")
+Person(expeditor, "Экспедитор", "Управляет несколькими заявками")
+Person(carrier, "Перевозчик", "Берёт заказы, делает ставки")
+Person(support, "Поддержка", "Обрабатывает тикеты")
+Person(admin, "Администратор", "Модерация, блокировки, отмены")
+
+System(cargomatch, "CargoMatch", "Биржа грузоперевозок с AI-копилотом")
+
+System_Ext(payment, "Агрегатор оплаты", "ЮКасса — эскроу и выплаты")
+System_Ext(maps, "Яндекс Карты", "GPS-трекинг и маршруты")
+System_Ext(sms, "SMS / Push сервис", "Уведомления о статусах")
+System_Ext(email, "Почтовый сервис", "Email-уведомления")
+System_Ext(llm, "YandexGPT API", "чат-поддержка и подсказки")
+
+Rel(shipper,    cargomatch, "Создаёт заявки, платит")
+Rel(expeditor,  cargomatch, "Управляет заказами")
+Rel(carrier,    cargomatch, "Берёт заказы, делает ставки")
+Rel(support,    cargomatch, "Обрабатывает тикеты")
+Rel(admin,      cargomatch, "Модерирует платформу")
+
+Rel(cargomatch, payment, "Эскроу, списание, выплаты")
+Rel(cargomatch, maps,    "Маршруты, GPS-трекинг")
+Rel(cargomatch, sms,     "Push и SMS уведомления")
+Rel(cargomatch, email,   "Email уведомления")
+Rel(cargomatch, llm,     "Запросы к LLM (MVP)")
+
+@enduml
